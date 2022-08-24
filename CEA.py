@@ -91,8 +91,11 @@ sql2 = SparqlQuery(m_num=20000, format_='json', url_=end_point, sparql_=sparql_)
 
 
 def start_search(points1):
-    r7 = db.search_run(points1, patten='search', is_all=False, maxResults=20)["resource"]
-
+    r7 = db.search_run(points1, patten='search', is_all=False, maxResults=20,timeout=5)["resource"]
+    for i  in range(len(r7)):
+        for word in r7[i]:
+            if similarity.simi.ratio_similarity(word,points1[i])<0.55:
+                re7[i].remove(word)
 
     r8 = sql2.search_run(r7, timeout=10000)["b"]
     return r7, r8
