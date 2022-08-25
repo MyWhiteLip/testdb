@@ -231,6 +231,7 @@ class EntitiesSearch(object):
                     pool.submit(self.__function__, cache_, url,
                                 keys, timeout, function_, args)
 
+
             if cache_.qsize() == 0:
                 print("Querying successfully.")
                 break

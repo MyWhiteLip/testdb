@@ -1,2 +1,3 @@
 idmap={}
 result={}
+valuemap={}

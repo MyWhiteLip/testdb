@@ -337,7 +337,7 @@ class SearchManage(EntitiesSearch):
         return self.analysis_to_dict()
 
     def search_run(self, points: list, keys: Union[str, List[str]] = None,
-                   timeout: float = 30.0, time_stop: float = 30.0, block_num: int = 10,
+                   timeout: float = 30.0, time_stop: float = 10.0, block_num: int = 10,
                    function_=None, args: tuple = (), **kwargs) -> dict:
         """Run querying using multithread.
 
@@ -577,7 +577,7 @@ class SparqlQuery(EntitiesSearch):
                 re_an[key].append(value)
         return re_an
 
-    def search_run(self, points: list, timeout: float = 30.0, time_stop: float = 30.0,
+    def search_run(self, points: list, timeout: float = 30.0, time_stop: float = 10.0,
                    block_num: int = 10, function_=None, args: tuple = (), **kwargs) -> dict:
         """Run querying using multithread.
 
@@ -642,7 +642,7 @@ class BingQuery(EntitiesSearch):
         super().__init__(key="q", m_num=m_num, paramFormat=PARAM_BING_QUERY)
         self.__url_ = url_
 
-    def search_run(self, points: list, timeout: float = 30.0, time_stop: float = 30.0,
+    def search_run(self, points: list, timeout: float = 30.0, time_stop: float = 10.0,
                    block_num: int = 10, function_=None, args: tuple = (), **kwargs) -> list:
         """Run querying using multithread.
 
@@ -713,7 +713,7 @@ class SpellCheck(EntitiesSearch):
             if a[i] is None:
                 self.re_list[i].set_analysis(p[i][self.key])
 
-    def search_run(self, points: list, timeout: float = 30.0, time_stop: float = 30.0,
+    def search_run(self, points: list, timeout: float = 30.0, time_stop: float = 10.0,
                    block_num: int = 10, function_=None, args: tuple = (), **kwargs) -> list:
         self.init_queue(points, **kwargs)
         print(f'Entities:{self.entities_num}(type: spell check with bing). Threading number:{self.m_num}.')
@@ -775,7 +775,7 @@ class DbpediaLookUp(EntitiesSearch):
                 re_an[key].append(value)
         return re_an
 
-    def search_run(self, points: list, patten: str = "search", is_all: bool = False, timeout: float = 30.0,
+    def search_run(self, points: list, patten: str = "search", is_all: bool = False, timeout: float = 10.0,
                    time_stop: float = 30.0, block_num: int = 10, function_=None, args: tuple = (), **kwargs) -> dict:
         """Run querying using multithread.
         :param points:

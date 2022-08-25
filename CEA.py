@@ -5,7 +5,7 @@ import pandas as pd
 from spellchecker import SpellChecker
 import gl
 import similarity.simi
-
+from useful import Dbpedia_Format
 spell = SpellChecker()
 
 from searchmanage_Wiki import SearchManage, Wikipedia, SparqlQuery, BingQuery, SpellCheck, DbpediaLookUp
@@ -85,23 +85,35 @@ end_point = "https://dbpedia.org/sparql"
 sparql_ = """
   SELECT?a?b
   WHERE {<%s> ?a ?b
- } LIMIT 100
+  FILTER regex(?a, "^http://dbpedia.org/ontology/").
+ } LIMIT 1000
   """
 sql2 = SparqlQuery(m_num=20000, format_='json', url_=end_point, sparql_=sparql_)
 
 
 def start_search(points1):
-    r7 = db.search_run(points1, patten='search', is_all=False, maxResults=20,timeout=5)["resource"]
-    for i  in range(len(r7)):
-        for word in r7[i]:
-            if similarity.simi.ratio_similarity(word,points1[i])<0.55:
-                re7[i].remove(word)
+    r7 = db.search_run(points1, patten='search', is_all=False, maxResults=10,timeout=5)["resource"]
 
-    r8 = sql2.search_run(r7, timeout=10000)["b"]
-    return r7, r8
+    resu=sql2.search_run(r7, timeout=10000)
+
+    r8 = resu["b"]
+    r9 = resu["a"]
+    value=[]
+    url=[]
+    isurl=[]
+    for i in range(len(r8)):
+        templist1=[]
+        templist2=[]
+        for j in range(len(r8[i])):
+            tempvalue,tempurl,tempisurl=Dbpedia_Format(r9[i][j],r8[i][j])
+            templist1.append(tempvalue)
+            templist2.append(tempurl)
+        value.append(templist1)
+        url.append(templist2)
+    return r7, value,url
 
 
-def start_write(thisword, re1, text_col, result, col, claim0):
+def start_write(thisword, re1, text_col, result, col, claim0,url):
     result_1 = result
     tempmark = 0
     ans = ""
@@ -109,6 +121,7 @@ def start_write(thisword, re1, text_col, result, col, claim0):
     word=""
     for item in text_col:
         word+=item
+
     if str(col) != "0":
         key = str(result_1[0]) + " " + str(result_1[1])
         if key in gl.result:
@@ -123,8 +136,8 @@ def start_write(thisword, re1, text_col, result, col, claim0):
         key = str(result_1[0]) + " " + str(result_1[1])
         if key in gl.result:
             dbkey = gl.result[key]
-            if dbkey in gl.idmap:
-                claim_list = gl.idmap[dbkey]
+            if dbkey in gl.valuemap:
+                claim_list = gl.valuemap[dbkey]
                 label_score = 0
                 for i in range(len(re1)):
                     if judge_pure_english(re1[i]):
@@ -159,15 +172,16 @@ def start_write(thisword, re1, text_col, result, col, claim0):
         else:
             for i in range(len(re1)):
                 if judge_pure_english(re1[i]):
-                    claim_mark = similarity.simi.ratio_similarity(thisword+word,correct(re1[i]))
+                    claim_mark = similarity.simi.ratio_similarity(correct(re1[i]),thisword+" "+word)
                     for item in text_col:
                         mark_item = 0
                         for claim in claim0[i]:
-                            if judge_pure_english(claim) and 0.5 < len(correct(claim)) / len(item) < 2:
+                            if judge_pure_english(claim) :
                                 tempmark_item = getmark(item, correct(claim))
                                 if tempmark_item > mark_item:
                                     mark_item = tempmark_item
                         claim_mark += mark_item
+                    print(re1[i],claim_mark)
                     if claim_mark > tempmark:
                         ans = re1[i]
                         resuid=i
@@ -180,7 +194,8 @@ def start_write(thisword, re1, text_col, result, col, claim0):
         writetocsv(result_1)
         if str(col) == "0":
             gl.result[str(result_1[0]) + " " + str(result_1[1])] = result_1[3]
-            gl.idmap[ans]=claim0[resuid]
+            gl.idmap[ans]=url[resuid]
+            gl.valuemap[ans] = claim0[resuid]
     else:
         writetocsv_other(result)
 
@@ -217,7 +232,7 @@ def startserach(start, end, freq, path=""):
         points.append(keyword)
         text.append(col_text)
         if (m + 1) % freq == 0:
-            re1, re2 = start_search(points)
+            re1, re2,url = start_search(points)
             for i in range(len(re1)):
                 index = m - freq + i + 1
                 result = []
@@ -225,9 +240,9 @@ def startserach(start, end, freq, path=""):
                 result.append(rowlist_1[index][0])
                 result.append(collist_1[index][0])
                 if len(re1[i]) != 0:
-                    start_write(points[i], re1[i], text[i], result, collist_1[index][0], re2[i])
+                    start_write(points[i], re1[i], text[i], result, collist_1[index][0], re2[i],url[i])
             points = []
             text = []
 
 
-startserach(0, 100,100 )
+startserach(0, 100,100)

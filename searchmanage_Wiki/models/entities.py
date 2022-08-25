@@ -10,10 +10,33 @@ from typing import Union, List
 import random
 from warnings import warn
 import requests
+from anti_useragent.useragent import ua
+from bs4 import BeautifulSoup
 from requests import ReadTimeout, Response
 from ..tools import AnalysisTools
 from ..tools import Tools
 from ..tools.Tools import AGENTS_
+proxies = {
+    "http": "172.30.80.1:7890", "https": "172.30.80.1:7890",
+}
+def ask_suggest(word):
+    timeout = 30
+    params = {
+        "q": word,
+        "o": 0,
+        "l": "dir",
+        "qo": "spellcheck",
+        "rtb": 20000,
+        "ad": "dirN"
+
+    }
+    result = requests.get("https://www.ask.com/web", params=params, proxies=proxies,timeout=timeout,
+                          headers={'User-Agent': random.choice(AGENTS_)})
+    page_text = result.text
+    soup = BeautifulSoup(page_text, "html.parser")
+    if soup.find('a', class_='PartialSpellCheck-link'):
+        return soup.find('a', class_='PartialSpellCheck-link').text  # 如果爬取成功，返回正确的字符串
+    return word  # 否则返回None
 
 
 class RequestAnalysis(object):
@@ -237,10 +260,13 @@ class Entities(RequestAnalysis):
         self.clear()
 
         try:
+            if "query" in  self.__params["query"]:
+                self.__params["query"]=ask_suggest(self.__params["query"])
             get_ = requests.get(url=url,
                                 params=self.__params,
                                 headers={'User-Agent': random.choice(AGENTS_)},
                                 timeout=timeout)
+            print(self.__params)
         except ReadTimeout:
             raise ValueError("Request time is over %fs." % timeout)
         except Exception as e:
