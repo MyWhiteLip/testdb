@@ -5,17 +5,23 @@
 # @function: the class of using API
 # @version : V0.4.5
 #
-
+import requests
 import re
 import sys
 from typing import Union, List
 from warnings import warn
 from queue import Queue
+from .tools.Tools import AGENTS_
+import random
+import gl
 from .models import EntitiesSearch, Entities
 from .tools import Tools, AnalysisTools
 from SPARQLWrapper import SPARQLWrapper
 import wikipedia
-
+from fake_useragent import UserAgent
+import json
+ua = UserAgent()
+agents = AGENTS_
 SEARCH_WIKI = {
     'search': None,
     'action': 'wbsearchentities',
@@ -94,7 +100,12 @@ PARAM_DBPEDIA_QUERY = {
     "minRelevance": None
 }
 """Parameters using in Dbpedia look up."""
-
+def is_json(myjson):
+ try:
+  json_object = json.loads(myjson)
+ except ValueError as e:
+  return False
+ return True
 
 class SearchManage(EntitiesSearch):
     """Class of querying with Wikidata API using multithread.
@@ -538,14 +549,29 @@ class SparqlQuery(EntitiesSearch):
 
     def __function__(self, cache_: Queue, url: str = None, keys: Union[str, List[str]] = None, timeout: float = 5,
                      function_=None, args: tuple = None):
-        sparql = SPARQLWrapper(endpoint=self.__url_, agent=AGENT_SPARQL_WIKI)
-        sparql.setReturnFormat(self.__returnFormat)
-        sparql.setTimeout(int(timeout))
         while not self.search_queue.empty():
             entities: Entities = self.search_queue.get()
             try:
-                sparql.setQuery(entities.get_params)
-                entities.set_request(sparql.query().convert())
+                word = entities.get_params[entities.get_params.find("<") + 1:entities.get_params.find(">")]
+                url = "http://dbpedia.org/sparql"
+                query = entities.get_params
+                format = "application/sparql-results+json"
+                params = {
+                    "default-graph-uri": "http://dbpedia.org",
+                    "query": query,
+                    "format": format,
+                    "timeout":10000
+                }
+                if word in gl.claimmap:
+                    entities.set_request(gl.claimmap[word])
+                else:
+                    result = requests.get(url, params=params,headers={'User-Agent': ua.random})
+                    while not is_json(result.content):
+                      result = requests.get(url, params=params,headers={'User-Agent': ua.random})
+                    entities.set_request(result.json())
+                    if "bindings" in result:
+                        if len(result["bindings"]) >= 1:
+                            gl.claimmap[word] = result
             except Exception as e:
                 print(e)
                 cache_.put(entities)
@@ -577,7 +603,7 @@ class SparqlQuery(EntitiesSearch):
                 re_an[key].append(value)
         return re_an
 
-    def search_run(self, points: list, timeout: float = 30.0, time_stop: float = 10.0,
+    def search_run(self, points: list, timeout: float = 30.0, time_stop: float = 5,
                    block_num: int = 10, function_=None, args: tuple = (), **kwargs) -> dict:
         """Run querying using multithread.
 
@@ -776,7 +802,7 @@ class DbpediaLookUp(EntitiesSearch):
         return re_an
 
     def search_run(self, points: list, patten: str = "search", is_all: bool = False, timeout: float = 10.0,
-                   time_stop: float = 30.0, block_num: int = 10, function_=None, args: tuple = (), **kwargs) -> dict:
+                   time_stop: float = 5.0, block_num: int = 10, function_=None, args: tuple = (), **kwargs) -> dict:
         """Run querying using multithread.
         :param points:
             N-dimensional list of variable parameters in sparql element

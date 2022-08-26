@@ -13,6 +13,8 @@ import requests
 from anti_useragent.useragent import ua
 from bs4 import BeautifulSoup
 from requests import ReadTimeout, Response
+
+import gl
 from ..tools import AnalysisTools
 from ..tools import Tools
 from ..tools.Tools import AGENTS_
@@ -260,13 +262,33 @@ class Entities(RequestAnalysis):
         self.clear()
 
         try:
-            if "query" in  self.__params["query"]:
-                self.__params["query"]=ask_suggest(self.__params["query"])
-            get_ = requests.get(url=url,
-                                params=self.__params,
-                                headers={'User-Agent': random.choice(AGENTS_)},
-                                timeout=timeout)
-            print(self.__params)
+            get_=None
+            if "query" in self.__params:
+                if self.__params["query"] in gl.ansmap:
+                    get_=gl.ansmap[self.__params["query"]]
+                else:
+                    if gl.block>=4:
+                        self.__params["query"] = "a"
+                        get_ = requests.get(url=url,
+                                            params=self.__params,
+                                            headers={'User-Agent': random.choice(AGENTS_)},
+                                            timeout=timeout)
+                        get_.json()["docs"]=[]
+
+                    if "query" in  self.__params:
+                        self.__params["query"]=ask_suggest(self.__params["query"])
+                    get_ = requests.get(url=url,
+                                        params=self.__params,
+                                        headers={'User-Agent': random.choice(AGENTS_)},
+                                        timeout=timeout)
+                    if "query" in self.__params:
+                        if len(get_.json()["docs"])!=0:
+                            gl.ansmap[self.__params["query"]]=get_
+            else:
+                get_ = requests.get(url=url,
+                                    params=self.__params,
+                                    headers={'User-Agent': random.choice(AGENTS_)},
+                                    timeout=timeout)
         except ReadTimeout:
             raise ValueError("Request time is over %fs." % timeout)
         except Exception as e:

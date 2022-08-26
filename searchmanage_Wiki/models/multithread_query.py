@@ -5,7 +5,7 @@
 # @function: the class for querying the set of entities using multithread
 # @version : V0.4.5
 #
-
+import gl
 from ..tools import Tools
 from ..models import Entities
 from queue import Queue
@@ -219,8 +219,8 @@ class EntitiesSearch(object):
         while not self.re_queue:
             self.re_queue.get()
 
-        block_num_ = 0
-        while block_num_ < block_num:
+        gl.block = 0
+        while gl.block < block_num:
             cache_ = Queue()
             m_num = self.m_num
             if m_num > self.search_queue.qsize():
@@ -230,8 +230,6 @@ class EntitiesSearch(object):
                 for i in range(m_num):
                     pool.submit(self.__function__, cache_, url,
                                 keys, timeout, function_, args)
-
-
             if cache_.qsize() == 0:
                 print("Querying successfully.")
                 break
@@ -242,7 +240,7 @@ class EntitiesSearch(object):
             print(f'Remained search failed Entities:{cache_.qsize()}.')
 
             self.search_queue = cache_
-            block_num_ += 1
+            gl.block += 1
             time.sleep(time_stop)
 
         if not self.search_queue.empty():

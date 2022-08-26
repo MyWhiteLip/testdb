@@ -86,7 +86,9 @@ sparql_ = """
   SELECT?a?b
   WHERE {<%s> ?a ?b
   FILTER regex(?a, "^http://dbpedia.org/ontology/").
- } LIMIT 1000
+  FILTER(str(?a)!="http://dbpedia.org/ontology/wikiPageWikiLink").
+  FILTER(str(?a)!="http://dbpedia.org/ontology/abstract")
+ } LIMIT 100
   """
 sql2 = SparqlQuery(m_num=20000, format_='json', url_=end_point, sparql_=sparql_)
 
@@ -181,7 +183,6 @@ def start_write(thisword, re1, text_col, result, col, claim0,url):
                                 if tempmark_item > mark_item:
                                     mark_item = tempmark_item
                         claim_mark += mark_item
-                    print(re1[i],claim_mark)
                     if claim_mark > tempmark:
                         ans = re1[i]
                         resuid=i

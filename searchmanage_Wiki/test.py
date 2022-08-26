@@ -5,7 +5,7 @@
 # @function: test for searchmanage
 # @version : V0.4.5
 #
-
+import similarity.simi
 from searchmanage_Wiki import SearchManage, Wikipedia, SparqlQuery, BingQuery, SpellCheck, DbpediaLookUp
 
 if __name__ == "__main__":
@@ -61,3 +61,4 @@ if __name__ == "__main__":
     sql2 = SparqlQuery(m_num=200, format_='json', url_=end_point, sparql_=sparql_)
     r8 = sql2.search_run(r7['resource'], timeout=10000)
     print(r8["b"])
+print(similarity.simi.ratio_similarity())
