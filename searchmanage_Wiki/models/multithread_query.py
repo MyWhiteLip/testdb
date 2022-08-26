@@ -151,6 +151,7 @@ class EntitiesSearch(object):
         """
         while not self.search_queue.empty():
             entities: Entities = self.search_queue.get()
+            print(self.search_queue.qsize())
             try:
                 entities.entity_get_wiki(url=url, timeout=timeout)
                 if function_ is None:

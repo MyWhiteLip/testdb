@@ -547,10 +547,11 @@ class SparqlQuery(EntitiesSearch):
         self.__returnFormat = format_
         self.__url_ = url_
 
-    def __function__(self, cache_: Queue, url: str = None, keys: Union[str, List[str]] = None, timeout: float = 5,
+    def __function__(self, cache_: Queue, url: str = None, keys: Union[str, List[str]] = None, timeout: float = 12,
                      function_=None, args: tuple = None):
         while not self.search_queue.empty():
             entities: Entities = self.search_queue.get()
+            print(self.search_queue.qsize())
             try:
                 word = entities.get_params[entities.get_params.find("<") + 1:entities.get_params.find(">")]
                 url = "http://dbpedia.org/sparql"
@@ -565,9 +566,9 @@ class SparqlQuery(EntitiesSearch):
                 if word in gl.claimmap:
                     entities.set_request(gl.claimmap[word])
                 else:
-                    result = requests.get(url, params=params,headers={'User-Agent': ua.random})
+                    result = requests.get(url, params=params,headers={'User-Agent': ua.random},timeout=timeout)
                     while not is_json(result.content):
-                      result = requests.get(url, params=params,headers={'User-Agent': ua.random})
+                      result = requests.get(url, params=params,headers={'User-Agent': ua.random},timeout=timeoutself.search_queue)
                     entities.set_request(result.json())
                     if "bindings" in result:
                         if len(result["bindings"]) >= 1:

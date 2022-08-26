@@ -267,7 +267,7 @@ class Entities(RequestAnalysis):
                 if self.__params["query"] in gl.ansmap:
                     get_=gl.ansmap[self.__params["query"]]
                 else:
-                    if gl.block>=4:
+                    if gl.block>=8:
                         self.__params["query"] = "a"
                         get_ = requests.get(url=url,
                                             params=self.__params,
